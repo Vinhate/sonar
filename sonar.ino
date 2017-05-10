@@ -1,15 +1,18 @@
+// Подключаем библиотеки
 #include <NewPing.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+#define btnPin 12
+#define ledcm 11
+#define ledin 10
 #define trigPin 9
 #define echoPin 8
 #define distance 200
-#define btnPin 12
 boolean lastBtn;
 boolean currentBtn;
 boolean switchBtn;
-NewPing sonar(trigPin, echoPin, distance);
-LiquidCrystal_I2C lcd(0x3f, 16, 2);
+NewPing sonar(trigPin, echoPin, distance); //Инициализируем датчик расстояния HC-SR04
+LiquidCrystal_I2C lcd(0x3f, 16, 2); //Инициализируем дисплей
 
 void setup() {
   lcd.init();
@@ -17,8 +20,11 @@ void setup() {
   lcd.clear();
   Serial.begin(9600);
   pinMode(btnPin, INPUT_PULLUP);
+  pinMode(ledcm, OUTPUT);
+  pinMode(ledin, OUTPUT);
 }
 
+//Функция подавления дребезга на кнопке
 boolean debounce(boolean last) {
   unsigned long int lastTime;
   boolean current = digitalRead(btnPin);
@@ -33,6 +39,7 @@ boolean debounce(boolean last) {
 
 void loop() {
 
+  //Проверяем нажата ли кнопка
   currentBtn = debounce(lastBtn);
   if (lastBtn == LOW && currentBtn == HIGH) {
     if (switchBtn) switchBtn = false;
@@ -40,6 +47,7 @@ void loop() {
   }
   lastBtn = currentBtn;
 
+  //Считываем даные расстояния с датчика HC-SR04
   int cm;
   int in;
   unsigned long int lastTime;
@@ -49,24 +57,29 @@ void loop() {
     in = sonar.ping_in();
   }
 
+  //Проверяем режим (сантиметры/дюймы) и выводим на дисплей
   if (switchBtn) {
+    digitalWrite(ledcm, HIGH);
+    digitalWrite(ledin, LOW);
     unsigned long int currentTime;
     if (millis() - currentTime > 1000) {
       currentTime = millis();
+      lcd.print("      ");
       lcd.setCursor(0, 0);
-      lcd.clear();
       lcd.print(cm);
     }
     lcd.print(" cm");
   } else {
+    digitalWrite(ledin, HIGH);
+    digitalWrite(ledcm, LOW);
     unsigned long int currentTime;
     if (millis() - currentTime > 1000) {
       currentTime = millis();
+      lcd.print("      ");
       lcd.setCursor(0, 0);
-      lcd.clear();
       lcd.print(in);
     }
     lcd.print(" inch");
   }
-
+  
 }
